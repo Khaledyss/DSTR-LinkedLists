@@ -133,17 +133,110 @@ void countRecords(Node* &head){
 }
 
 
+void printMenu(){
+    cout << "\n===== Student Record System =====\n";
+    cout << "1. Insert student at the beginning\n";
+    cout << "2. Insert student at the end\n";
+    cout << "3. Insert student at a specific position\n";
+    cout << "4. Display all students\n";
+    cout << "5. Delete student by ID\n";
+    cout << "6. Search student by name\n";
+    cout << "7. Count total records\n";
+    cout << "8. Exit\n";
+    cout << "Enter your choice: ";
+}
+ 
 int main(){
-    Node* head = nullptr; 
-    insertAtBeginning(head, 1, "khaled", "Degree", 2026, 3.6);
-    traverse(head);
-    insertAtEnd(head, 2, "Muhammed", "foundation", 2026, 4.0);
-    traverse(head);
-    insertAtPosition(head,1, 3, "Hussein", "degree", 2026, 3.9);
-    traverse(head);
-    cout << "search" << endl;
-    searchByName(head, "Hussein");
-    countRecords(head);
+    Node* head = nullptr;
+    int choice;
+ 
+    do {
+        printMenu();
+        cin >> choice;
+ 
+        // Guard against non-numeric input so the menu doesn't loop forever
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(1000, '\n');
+            cout << "Invalid input. Please enter a number from 1-8.\n";
+            continue;
+        }
+ 
+        switch (choice) {
+            case 1: {
+                int id, year;
+                double gpa;
+                string name, prog;
+                cout << "Enter Student ID: "; cin >> id;
+                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
+                cout << "Enter Programme: "; getline(cin, prog);
+                cout << "Enter Year of Study: "; cin >> year;
+                cout << "Enter CGPA: "; cin >> gpa;
+                insertAtBeginning(head, id, name, prog, year, gpa);
+                break;
+            }
+            case 2: {
+                int id, year;
+                double gpa;
+                string name, prog;
+                cout << "Enter Student ID: "; cin >> id;
+                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
+                cout << "Enter Programme: "; getline(cin, prog);
+                cout << "Enter Year of Study: "; cin >> year;
+                cout << "Enter CGPA: "; cin >> gpa;
+                insertAtEnd(head, id, name, prog, year, gpa);
+                break;
+            }
+            case 3: {
+                int id, year, pos;
+                double gpa;
+                string name, prog;
+                cout << "Enter position to insert at: "; cin >> pos;
+                cout << "Enter Student ID: "; cin >> id;
+                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
+                cout << "Enter Programme: "; getline(cin, prog);
+                cout << "Enter Year of Study: "; cin >> year;
+                cout << "Enter CGPA: "; cin >> gpa;
+                insertAtPosition(head, pos, id, name, prog, year, gpa);
+                break;
+            }
+            case 4:
+                cout << "\n--- All Student Records ---\n";
+                traverse(head);
+                break;
+            case 5: {
+                int id;
+                cout << "Enter Student ID to delete: "; cin >> id;
+                deleteById(head, id);
+                break;
+            }
+            case 6: {
+                string name;
+                cout << "Enter Full Name to search: "; cin.ignore(); getline(cin, name);
+                searchByName(head, name);
+                break;
+            }
+            case 7:
+                countRecords(head);
+                break;
+            case 8:
+                cout << "Exiting program. Goodbye!\n";
+                break;
+            default:
+                cout << "Invalid choice. Please select a number between 1 and 8.\n";
+        }
+ 
+    } while (choice != 8);
+
+    
+    while (head != nullptr) {
+        Node* temp = head;
+        head = head->next;
+        delete temp;
+    }
+
+ 
     return 0;
 }
+
 
