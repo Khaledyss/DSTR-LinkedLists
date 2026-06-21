@@ -1,0 +1,5 @@
+# Ignore compiled executables (never commit these!)
+*.exe
+
+# Ignore local VS Code configurations (since your tasks.json has your specific C:\msys64 path)
+.vscode/
