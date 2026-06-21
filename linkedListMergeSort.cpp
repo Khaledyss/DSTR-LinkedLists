@@ -71,6 +71,32 @@ void traverse(Node* head){
     }
 }
 
+void deleteById(Node* &head, int id){
+    Node* temp = head;
+    Node* prev = head;
+    //if its the first node
+    if(head->studentID == id){
+        Node* nodeToDelete = head;
+        head = head->next;
+        delete nodeToDelete;
+        cout << "Successfully deleted student ID: " << id << endl;
+        return;
+    }
+
+    while(temp->studentID != id && temp != nullptr ){
+        prev = temp;
+        temp = temp->next;
+    }
+
+    if (temp != nullptr) {
+        prev->next = temp->next; 
+        delete temp;             
+        cout << "Successfully deleted student ID: " << id << endl;
+    } else {
+        cout << "[Result] Student ID " << id << " was not found in the system.\n";
+    }
+}
+
 int main(){
     Node* head = nullptr; 
     insertAtBeginning(head, 1, "khaled", "Degree", 2026, 3.6);
@@ -79,5 +105,8 @@ int main(){
     traverse(head);
     insertAtPosition(head,1, 3, "Hussein", "degree", 2026, 3.9);
     traverse(head);
+    deleteById(head, 3);
+    traverse(head);
     return 0;
 }
+
