@@ -93,8 +93,32 @@ void deleteById(Node* &head, int id){
         delete temp;             
         cout << "Successfully deleted student ID: " << id << endl;
     } else {
-        cout << "[Result] Student ID " << id << " was not found in the system.\n";
+        cout << "Student ID " << id << " was not found in the system.\n";
     }
+}
+
+void searchByName(Node* &head, string name){
+    Node* temp = head;
+    bool found = false;
+    if (head == nullptr) {
+        cout << "\n The list is empty. Cannot search.\n";
+        return;
+    }
+    while(temp!=nullptr){
+       if (temp->FullName == name) {
+            cout << "ID: " << temp->studentID 
+                 << " | Name: " << temp->FullName 
+                 << " | Programme: " << temp->programme
+                 << " | CGPA: " << temp->cgpa << endl;
+            found = true; 
+        }
+        temp = temp->next;
+    }
+
+    if (!found) {
+        cout << "No student with the name '" << name << "' exists in the system.\n";
+    }
+    
 }
 
 int main(){
@@ -105,8 +129,8 @@ int main(){
     traverse(head);
     insertAtPosition(head,1, 3, "Hussein", "degree", 2026, 3.9);
     traverse(head);
-    deleteById(head, 3);
-    traverse(head);
+    cout << "search" << endl;
+    searchByName(head, "Hussein");
     return 0;
 }
 
