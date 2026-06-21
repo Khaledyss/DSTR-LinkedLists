@@ -121,6 +121,18 @@ void searchByName(Node* &head, string name){
     
 }
 
+void countRecords(Node* &head){
+    int count = 0;
+    Node* temp = head;  
+    while(temp!=nullptr){
+        temp= temp->next;
+        count++;
+    }
+
+    cout <<"The number of records are: "<< count;
+}
+
+
 int main(){
     Node* head = nullptr; 
     insertAtBeginning(head, 1, "khaled", "Degree", 2026, 3.6);
@@ -131,6 +143,7 @@ int main(){
     traverse(head);
     cout << "search" << endl;
     searchByName(head, "Hussein");
+    countRecords(head);
     return 0;
 }
 
