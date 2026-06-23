@@ -1,26 +1,35 @@
 #include <iostream>
-using namespace std;
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <limits>
+#include <vector>
+#include <chrono>
+using namespace std;
 
 class Node {
 public:
     Node* next;
-    int studentID;
+    string studentID;      // changed from int -> string (real IDs are like "TP180623")
     string FullName;
     string programme;
     int yearOfStudy;
     double cgpa;
-      
-    Node(int id, string name, string prog, int year, double gpa) {
+    string contactNumber;  // new field, present in the CSV
+
+    Node(string id, string name, string prog, int year, double gpa, string contact = "") {
         studentID = id;
         FullName = name;
         programme = prog;
         yearOfStudy = year;
         cgpa = gpa;
+        contactNumber = contact;
         next = nullptr;
     }
 };
+
+// ---------- Input validation helpers ----------
+
 int getValidInt(const string& prompt) {
     int value;
     while (true) {
@@ -36,28 +45,7 @@ int getValidInt(const string& prompt) {
         return value;
     }
 }
-bool isIdTaken(Node* head, int id) {
-    Node* temp = head;
-    while (temp != nullptr) {
-        if (temp->studentID == id) {
-            return true;
-        }
-        temp = temp->next;
-    }
-    return false;
-}
 
-int getValidUniqueId(Node* head, const string& prompt) {
-    int id;
-    while (true) {
-        id = getValidInt(prompt);
-        if (isIdTaken(head, id)) {
-            cout << "Student ID " << id << " already exists! Please enter a different ID.\n";
-            continue;
-        }
-        return id;
-    }
-}
 double getValidCGPA(const string& prompt) {
     double value;
     while (true) {
@@ -78,6 +66,7 @@ double getValidCGPA(const string& prompt) {
         return value;
     }
 }
+
 string getValidLine(const string& prompt) {
     string value;
     while (true) {
@@ -90,38 +79,63 @@ string getValidLine(const string& prompt) {
         return value;
     }
 }
-void insertAtBeginning(Node*& head, int id, string name, string prog, int year, double gpa) {
-    Node* newNode = new Node(id, name, prog, year, gpa);
+
+// ---------- Uniqueness check for Student ID ----------
+
+bool isIdTaken(Node* head, const string& id) {
+    Node* temp = head;
+    while (temp != nullptr) {
+        if (temp->studentID == id) {
+            return true;
+        }
+        temp = temp->next;
+    }
+    return false;
+}
+
+string getValidUniqueId(Node* head, const string& prompt) {
+    string id;
+    while (true) {
+        id = getValidLine(prompt);
+        if (isIdTaken(head, id)) {
+            cout << "Student ID " << id << " already exists! Please enter a different ID.\n";
+            continue;
+        }
+        return id;
+    }
+}
+
+// ---------- Linked list operations ----------
+
+void insertAtBeginning(Node*& head, string id, string name, string prog, int year, double gpa, string contact = "") {
+    Node* newNode = new Node(id, name, prog, year, gpa, contact);
     newNode->next = head;
     head = newNode;
     cout << "Successfully inserted at the beginning!\n";
 }
 
-
-void insertAtEnd(Node*& head, int id, string name, string prog, int year, double gpa){
+void insertAtEnd(Node*& head, string id, string name, string prog, int year, double gpa, string contact = "") {
     Node* temp = head;
-    Node* newNode = new Node(id, name, prog, year, gpa);
+    Node* newNode = new Node(id, name, prog, year, gpa, contact);
     if (head == nullptr) {
         head = newNode;
-        cout << "\n[Success] List was empty. Successfully inserted as first node!\n";
         return;
     }
-    while(temp->next != NULL){
+    while (temp->next != NULL) {
         temp = temp->next;
     }
     temp->next = newNode;
-    cout << "Successfully inserted at the end!\n";
 }
 
-void insertAtPosition(Node*& head, int index, int id, string name, string prog, int year, double gpa){
+void insertAtPosition(Node*& head, int index, string id, string name, string prog, int year, double gpa, string contact = "") {
     if (index <= 1 || head == nullptr) {
-        insertAtBeginning(head, id, name, prog, year, gpa);
+        insertAtBeginning(head, id, name, prog, year, gpa, contact);
         return;
     }
     Node* temp = head;
-    Node* newNode = new Node(id, name, prog, year, gpa);
+    Node* newNode = new Node(id, name, prog, year, gpa, contact);
     int count = 1;
-    while(count != index - 1 && temp->next != nullptr){
+    while (count != index - 1 && temp->next != nullptr) {
         temp = temp->next;
         count++;
     }
@@ -130,19 +144,26 @@ void insertAtPosition(Node*& head, int index, int id, string name, string prog, 
     cout << "Successfully inserted at the " << index << endl;
 }
 
-void traverse(Node* head){
+void traverse(Node* head) {
     Node* temp = head;
-    while(temp != NULL){
-        cout << "ID: " << temp->studentID << " | Name: " << temp->FullName << " | CGPA: " << temp->cgpa << endl;
+    while (temp != NULL) {
+        cout << "ID: " << temp->studentID << " | Name: " << temp->FullName
+             << " | Programme: " << temp->programme
+             << " | Year: " << temp->yearOfStudy
+             << " | CGPA: " << temp->cgpa << endl;
         temp = temp->next;
     }
 }
 
-void deleteById(Node* &head, int id){
+void deleteById(Node*& head, string id) {
+    if (head == nullptr) {
+        cout << "The list is empty. Nothing to delete.\n";
+        return;
+    }
     Node* temp = head;
     Node* prev = head;
-    //if its the first node
-    if(head->studentID == id){
+
+    if (head->studentID == id) {
         Node* nodeToDelete = head;
         head = head->next;
         delete nodeToDelete;
@@ -150,34 +171,34 @@ void deleteById(Node* &head, int id){
         return;
     }
 
-    while(temp->studentID != id && temp != nullptr ){
+    while (temp != nullptr && temp->studentID != id) {
         prev = temp;
         temp = temp->next;
     }
 
     if (temp != nullptr) {
-        prev->next = temp->next; 
-        delete temp;             
+        prev->next = temp->next;
+        delete temp;
         cout << "Successfully deleted student ID: " << id << endl;
     } else {
         cout << "Student ID " << id << " was not found in the system.\n";
     }
 }
 
-void searchByName(Node* &head, string name){
+void searchByName(Node*& head, string name) {
     Node* temp = head;
     bool found = false;
     if (head == nullptr) {
-        cout << "\n The list is empty. Cannot search.\n";
+        cout << "\nThe list is empty. Cannot search.\n";
         return;
     }
-    while(temp!=nullptr){
-       if (temp->FullName == name) {
-            cout << "ID: " << temp->studentID 
-                 << " | Name: " << temp->FullName 
+    while (temp != nullptr) {
+        if (temp->FullName == name) {
+            cout << "ID: " << temp->studentID
+                 << " | Name: " << temp->FullName
                  << " | Programme: " << temp->programme
                  << " | CGPA: " << temp->cgpa << endl;
-            found = true; 
+            found = true;
         }
         temp = temp->next;
     }
@@ -185,53 +206,48 @@ void searchByName(Node* &head, string name){
     if (!found) {
         cout << "No student with the name '" << name << "' exists in the system.\n";
     }
-    
 }
 
-void countRecords(Node* &head){
+void countRecords(Node*& head) {
     int count = 0;
-    Node* temp = head;  
-    while(temp!=nullptr){
-        temp= temp->next;
+    Node* temp = head;
+    while (temp != nullptr) {
+        temp = temp->next;
         count++;
     }
-
-    cout <<"The number of records are: "<< count;
+    cout << "The number of records are: " << count << endl;
 }
 
-Node* midPoint(Node* head){
+Node* midPoint(Node* head) {
     Node* slow = head;
     Node* fast = head->next;
-
-    while(fast!=NULL && fast->next !=NULL){
+    while (fast != NULL && fast->next != NULL) {
         slow = slow->next;
-        fast = fast-> next -> next;
+        fast = fast->next->next;
     }
     return slow;
 }
 
-Node* merge(Node* a, Node* b){
-    if(a == nullptr) return b;
-    if(b == nullptr) return a;
+Node* merge(Node* a, Node* b) {
+    if (a == nullptr) return b;
+    if (b == nullptr) return a;
 
     Node* result = nullptr;
-    if(a->cgpa > b->cgpa){
+    if (a->cgpa > b->cgpa) {
         result = a;
-        result->next = merge(a->next,b);
-    }else{
-        result = b; 
+        result->next = merge(a->next, b);
+    } else {
+        result = b;
         result->next = merge(a, b->next);
     }
     return result;
 }
 
-Node* mergeSort(Node* head){
-    if(head==NULL || head->next == NULL){
+Node* mergeSort(Node* head) {
+    if (head == NULL || head->next == NULL) {
         return head;
     }
-
     Node* mid = midPoint(head);
-
     Node* a = head;
     Node* b = mid->next;
     mid->next = nullptr;
@@ -241,7 +257,130 @@ Node* mergeSort(Node* head){
 
     return merge(a, b);
 }
-void printMenu(){
+
+// ---------- CSV loading ----------
+
+
+vector<string> splitCSVLine(const string& line) {
+    vector<string> fields;
+    stringstream ss(line);
+    string field;
+    while (getline(ss, field, ',')) {
+        fields.push_back(field);
+    }
+    return fields;
+}
+
+
+void loadFromCSV(Node*& head, const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "[Warning] Could not open file: " << filename << ". Skipping.\n";
+        return;
+    }
+    string line;
+    bool isHeader = true;
+    int loaded = 0, skipped = 0;
+
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+
+        if (isHeader) {
+            isHeader = false;
+            continue; // skip the header row
+        }
+
+        vector<string> fields = splitCSVLine(line);
+        if (fields.size() < 5) {
+            skipped++;
+            continue;
+        }
+
+        string id = fields[0];
+        string name = fields[1];
+        string prog = fields[2];
+        string contact = (fields.size() >= 6) ? fields[5] : "";
+
+        int year;
+        double gpa;
+        try {
+            year = stoi(fields[3]);
+            gpa = stod(fields[4]);
+        } catch (...) {
+            skipped++; // non-numeric Year/CGPA in this row
+            continue;
+        }
+
+        if (id.empty() || isIdTaken(head, id)) {
+            skipped++; // missing or duplicate ID across files
+            continue;
+        }
+
+        insertAtEnd(head, id, name, prog, year, gpa, contact);
+        loaded++;
+    }
+
+    file.close();
+    cout << "Loaded " << loaded << " record(s) from " << filename
+         << " (" << skipped << " skipped).\n";
+}
+
+// Frees every node in a list (used to clean up after a benchmark run)
+void freeList(Node*& head) {
+    while (head != nullptr) {
+        Node* temp = head;
+        head = head->next;
+        delete temp;
+    }
+}
+
+int countNodes(Node* head) {
+    int count = 0;
+    Node* temp = head;
+    while (temp != nullptr) {
+        count++;
+        temp = temp->next;
+    }
+    return count;
+}
+
+// Loads ONE file into its own fresh list, times the load and the merge sort
+// separately, prints the results, then frees that list's memory.
+void benchmarkFile(const string& filename) {
+    Node* head = nullptr;
+
+    auto loadStart = chrono::high_resolution_clock::now();
+    loadFromCSV(head, filename);
+    auto loadEnd = chrono::high_resolution_clock::now();
+
+    int recordCount = countNodes(head);
+
+    auto sortStart = chrono::high_resolution_clock::now();
+    head = mergeSort(head);
+    auto sortEnd = chrono::high_resolution_clock::now();
+
+    chrono::duration<double, micro> loadTime = loadEnd - loadStart;
+    chrono::duration<double, micro> sortTime = sortEnd - sortStart;
+
+    cout << "\n--- " << filename << " ---\n";
+    cout << "Records loaded : " << recordCount << "\n";
+    cout << "Load time      : " << loadTime.count() << " us\n";
+    cout << "Sort time      : " << sortTime.count() << " us\n";
+    cout << "Total time     : " << (loadTime.count() + sortTime.count()) << " us\n";
+
+    freeList(head); // this list is separate from main's list, so clean it up here
+}
+
+// Runs benchmarkFile() on every file in the list, one at a time.
+void benchmarkAllFiles(const vector<string>& filenames) {
+    cout << "\n===== Running Load & Sort Benchmark =====\n";
+    for (const string& filename : filenames) {
+        benchmarkFile(filename);
+    }
+    cout << "\n===== Benchmark Complete =====\n";
+}
+
+void printMenu() {
     cout << "\n===== Student Record System =====\n";
     cout << "1. Insert student at the beginning\n";
     cout << "2. Insert student at the end\n";
@@ -252,30 +391,42 @@ void printMenu(){
     cout << "7. Count total records\n";
     cout << "8. Merge Sort\n";
     cout << "9. Exit\n";
-
+    cout << "10. Benchmark load & sort time for each CSV file\n";
     cout << "Enter your choice: ";
 }
- 
-int main(){
+
+int main() {
     Node* head = nullptr;
-    int choice;
+
  
+    vector<string> csvFiles = {
+        "./datasets/students_500.csv",
+        "./datasets/students_2000.csv",
+        "./datasets/students_8000.csv",
+        "./datasets/students_30000.csv"
+    };
+
+    for (const string& filename : csvFiles) {
+        loadFromCSV(head, filename);
+    }
+
+    int choice;
+
     do {
         printMenu();
         cin >> choice;
- 
-        
+
         if (cin.fail()) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "Invalid input. Please enter a number from 1-9.\n";
+            cout << "Invalid input. Please enter a number from 1-10.\n";
             continue;
         }
-        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
- 
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
         switch (choice) {
             case 1: {
-                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
                 string prog = getValidLine("Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
@@ -284,17 +435,18 @@ int main(){
                 break;
             }
             case 2: {
-                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
                 string prog = getValidLine("Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
                 double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtEnd(head, id, name, prog, year, gpa);
+                cout << "Successfully inserted at the end!\n";
                 break;
             }
             case 3: {
                 int pos = getValidInt("Enter position to insert at: ");
-                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
                 string prog = getValidLine("Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
@@ -307,7 +459,7 @@ int main(){
                 traverse(head);
                 break;
             case 5: {
-                int id = getValidInt("Enter Student ID to delete: ");
+                string id = getValidLine("Enter Student ID to delete: ");
                 deleteById(head, id);
                 break;
             }
@@ -319,19 +471,20 @@ int main(){
             case 7:
                 countRecords(head);
                 break;
-
             case 8: {
-                head = mergeSort(head);
-                traverse(head); 
+                head = mergeSort(head);   
+                traverse(head);
                 break;
             }
             case 9:
                 cout << "Exiting program. Goodbye!\n";
                 break;
+            case 10:
+                benchmarkAllFiles(csvFiles);
+                break;
             default:
-                cout << "Invalid choice. Please select a number between 1 and 9.\n";
+                cout << "Invalid choice. Please select a number between 1 and 10.\n";
         }
- 
     } while (choice != 9);
 
     while (head != nullptr) {
