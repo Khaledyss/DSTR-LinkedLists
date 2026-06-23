@@ -21,7 +21,6 @@ public:
     }
 };
 
-
 void insertAtBeginning(Node*& head, int id, string name, string prog, int year, double gpa) {
     Node* newNode = new Node(id, name, prog, year, gpa);
     newNode->next = head;
@@ -61,11 +60,6 @@ void insertAtPosition(Node*& head, int index, int id, string name, string prog, 
     temp->next = newNode;
     cout << "Successfully inserted at the " << index << endl;
 }
-
-
-
-
-
 
 void traverse(Node* head){
     Node* temp = head;
@@ -142,14 +136,42 @@ Node* midPoint(Node* head){
 
     while(fast!=NULL && fast->next !=NULL){
         slow = slow->next;
-        fast = fast-> next;
+        fast = fast-> next -> next;
     }
     return slow;
 }
 
+Node* merge(Node* a, Node* b){
+    if(a == nullptr) return b;
+    if(b == nullptr) return a;
 
+    Node* result = nullptr;
+    if(a->cgpa > b->cgpa){
+        result = a;
+        result->next = merge(a->next,b);
+    }else{
+        result = b; 
+        result->next = merge(a, b->next);
+    }
+    return result;
+}
 
+Node* mergeSort(Node* head){
+    if(head==NULL || head->next == NULL){
+        return head;
+    }
 
+    Node* mid = midPoint(head);
+
+    Node* a = head;
+    Node* b = mid->next;
+    mid->next = nullptr;
+
+    a = mergeSort(a);
+    b = mergeSort(b);
+
+    return merge(a, b);
+}
 void printMenu(){
     cout << "\n===== Student Record System =====\n";
     cout << "1. Insert student at the beginning\n";
@@ -159,7 +181,9 @@ void printMenu(){
     cout << "5. Delete student by ID\n";
     cout << "6. Search student by name\n";
     cout << "7. Count total records\n";
-    cout << "8. Exit\n";
+    cout << "8. Merge Sort\n";
+    cout << "9. Exit\n";
+
     cout << "Enter your choice: ";
 }
  
@@ -236,14 +260,20 @@ int main(){
             case 7:
                 countRecords(head);
                 break;
-            case 8:
+
+            case 8: {
+                mergeSort(head);
+                traverse(head); 
+                break;
+            }
+            case 9:
                 cout << "Exiting program. Goodbye!\n";
                 break;
             default:
                 cout << "Invalid choice. Please select a number between 1 and 8.\n";
         }
  
-    } while (choice != 8);
+    } while (choice != 9);
 
     
     while (head != nullptr) {
