@@ -10,8 +10,7 @@ public:
     string programme;
     int yearOfStudy;
     double cgpa;
-
-    // Constructor to easily initialize a new student record node
+      
     Node(int id, string name, string prog, int year, double gpa) {
         studentID = id;
         FullName = name;
@@ -22,7 +21,7 @@ public:
     }
 };
 
-// FIX: Added '&' so changes to head actually save back to main()
+
 void insertAtBeginning(Node*& head, int id, string name, string prog, int year, double gpa) {
     Node* newNode = new Node(id, name, prog, year, gpa);
     newNode->next = head;
@@ -30,7 +29,7 @@ void insertAtBeginning(Node*& head, int id, string name, string prog, int year, 
     cout << "Successfully inserted at the beginning!\n";
 }
 
-// FIX: Added '&' so an empty list can successfully assign its first node
+
 void insertAtEnd(Node*& head, int id, string name, string prog, int year, double gpa){
     Node* temp = head;
     Node* newNode = new Node(id, name, prog, year, gpa);
@@ -62,6 +61,11 @@ void insertAtPosition(Node*& head, int index, int id, string name, string prog, 
     temp->next = newNode;
     cout << "Successfully inserted at the " << index << endl;
 }
+
+
+
+
+
 
 void traverse(Node* head){
     Node* temp = head;
@@ -131,6 +135,19 @@ void countRecords(Node* &head){
 
     cout <<"The number of records are: "<< count;
 }
+
+Node* midPoint(Node* head){
+    Node* slow = head;
+    Node* fast = head->next;
+
+    while(fast!=NULL && fast->next !=NULL){
+        slow = slow->next;
+        fast = fast-> next;
+    }
+    return slow;
+}
+
+
 
 
 void printMenu(){
@@ -234,8 +251,6 @@ int main(){
         head = head->next;
         delete temp;
     }
-
- 
     return 0;
 }
 
