@@ -1,6 +1,7 @@
 #include <iostream>
 using namespace std;
 #include <string>
+#include <limits>
 
 class Node {
 public:
@@ -20,7 +21,75 @@ public:
         next = nullptr;
     }
 };
+int getValidInt(const string& prompt) {
+    int value;
+    while (true) {
+        cout << prompt;
+        cin >> value;
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input! Please enter a valid whole number (integer).\n";
+            continue;
+        }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        return value;
+    }
+}
+bool isIdTaken(Node* head, int id) {
+    Node* temp = head;
+    while (temp != nullptr) {
+        if (temp->studentID == id) {
+            return true;
+        }
+        temp = temp->next;
+    }
+    return false;
+}
 
+int getValidUniqueId(Node* head, const string& prompt) {
+    int id;
+    while (true) {
+        id = getValidInt(prompt);
+        if (isIdTaken(head, id)) {
+            cout << "Student ID " << id << " already exists! Please enter a different ID.\n";
+            continue;
+        }
+        return id;
+    }
+}
+double getValidCGPA(const string& prompt) {
+    double value;
+    while (true) {
+        cout << prompt;
+        cin >> value;
+        if (cin.fail()) {
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input! Please enter a valid number for CGPA.\n";
+            continue;
+        }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+
+        if (value < 0.0 || value > 4.0) {
+            cout << "Invalid CGPA! CGPA must be between 0.0 and 4.0. Please enter again.\n";
+            continue;
+        }
+        return value;
+    }
+}
+string getValidLine(const string& prompt) {
+    string value;
+    while (true) {
+        cout << prompt;
+        getline(cin, value);
+        if (value.empty()) {
+            cout << "Input cannot be empty. Please enter again.\n";
+            continue;
+        }
+        return value;
+    }
+}
 void insertAtBeginning(Node*& head, int id, string name, string prog, int year, double gpa) {
     Node* newNode = new Node(id, name, prog, year, gpa);
     newNode->next = head;
@@ -195,49 +264,41 @@ int main(){
         printMenu();
         cin >> choice;
  
-        // Guard against non-numeric input so the menu doesn't loop forever
+        
         if (cin.fail()) {
             cin.clear();
-            cin.ignore(1000, '\n');
-            cout << "Invalid input. Please enter a number from 1-8.\n";
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Invalid input. Please enter a number from 1-9.\n";
             continue;
         }
+        cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
  
         switch (choice) {
             case 1: {
-                int id, year;
-                double gpa;
-                string name, prog;
-                cout << "Enter Student ID: "; cin >> id;
-                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
-                cout << "Enter Programme: "; getline(cin, prog);
-                cout << "Enter Year of Study: "; cin >> year;
-                cout << "Enter CGPA: "; cin >> gpa;
+                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string name = getValidLine("Enter Full Name: ");
+                string prog = getValidLine("Enter Programme: ");
+                int year = getValidInt("Enter Year of Study: ");
+                double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtBeginning(head, id, name, prog, year, gpa);
                 break;
             }
             case 2: {
-                int id, year;
-                double gpa;
-                string name, prog;
-                cout << "Enter Student ID: "; cin >> id;
-                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
-                cout << "Enter Programme: "; getline(cin, prog);
-                cout << "Enter Year of Study: "; cin >> year;
-                cout << "Enter CGPA: "; cin >> gpa;
+                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string name = getValidLine("Enter Full Name: ");
+                string prog = getValidLine("Enter Programme: ");
+                int year = getValidInt("Enter Year of Study: ");
+                double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtEnd(head, id, name, prog, year, gpa);
                 break;
             }
             case 3: {
-                int id, year, pos;
-                double gpa;
-                string name, prog;
-                cout << "Enter position to insert at: "; cin >> pos;
-                cout << "Enter Student ID: "; cin >> id;
-                cout << "Enter Full Name: "; cin.ignore(); getline(cin, name);
-                cout << "Enter Programme: "; getline(cin, prog);
-                cout << "Enter Year of Study: "; cin >> year;
-                cout << "Enter CGPA: "; cin >> gpa;
+                int pos = getValidInt("Enter position to insert at: ");
+                int id = getValidUniqueId(head, "Enter Student ID: ");
+                string name = getValidLine("Enter Full Name: ");
+                string prog = getValidLine("Enter Programme: ");
+                int year = getValidInt("Enter Year of Study: ");
+                double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtPosition(head, pos, id, name, prog, year, gpa);
                 break;
             }
@@ -246,14 +307,12 @@ int main(){
                 traverse(head);
                 break;
             case 5: {
-                int id;
-                cout << "Enter Student ID to delete: "; cin >> id;
+                int id = getValidInt("Enter Student ID to delete: ");
                 deleteById(head, id);
                 break;
             }
             case 6: {
-                string name;
-                cout << "Enter Full Name to search: "; cin.ignore(); getline(cin, name);
+                string name = getValidLine("Enter Full Name to search: ");
                 searchByName(head, name);
                 break;
             }
@@ -262,7 +321,7 @@ int main(){
                 break;
 
             case 8: {
-                mergeSort(head);
+                head = mergeSort(head);
                 traverse(head); 
                 break;
             }
@@ -270,12 +329,11 @@ int main(){
                 cout << "Exiting program. Goodbye!\n";
                 break;
             default:
-                cout << "Invalid choice. Please select a number between 1 and 8.\n";
+                cout << "Invalid choice. Please select a number between 1 and 9.\n";
         }
  
     } while (choice != 9);
 
-    
     while (head != nullptr) {
         Node* temp = head;
         head = head->next;
@@ -283,5 +341,3 @@ int main(){
     }
     return 0;
 }
-
-
