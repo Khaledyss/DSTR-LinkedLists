@@ -249,20 +249,26 @@ Node* midPoint(Node* head) {
 }
 
 Node* merge(Node* a, Node* b) {
-    if (a == nullptr) return b;
-    if (b == nullptr) return a;
+    Node dummy("", "", "", 0, 0.0);
+    Node* tail = &dummy;
 
-    Node* result = nullptr;
-    if (a->cgpa > b->cgpa) {
-        result = a;
-        result->next = merge(a->next, b);
-    } else {
-        result = b;
-        result->next = merge(a, b->next);
+    while (a != nullptr && b != nullptr) {
+        if (a->cgpa > b->cgpa) {
+            tail->next = a;
+            a = a->next;
+        } else {
+            tail->next = b;
+            b = b->next;
+        }
+        tail = tail->next;
     }
-    return result;
-}
 
+    //if there is remaining nodes without comparing with b or a
+    if (a != nullptr) tail->next = a;
+    else tail->next = b;
+
+    return dummy.next;
+}
 Node* mergeSort(Node* head) {
     if (head == NULL || head->next == NULL) {
         return head;
