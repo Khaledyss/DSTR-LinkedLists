@@ -27,8 +27,6 @@ public:
     }
 };
 
-
-
 int getValidInt(const string& prompt) {
     int value;
     while (true) {
@@ -79,8 +77,6 @@ string getValidLine(const string& prompt) {
     }
 }
 
-// ---------- Uniqueness check for Student ID ----------
-
 bool isIdTaken(Node* head, const string& id) {
     Node* temp = head;
     while (temp != nullptr) {
@@ -103,8 +99,6 @@ string getValidUniqueId(Node* head, const string& prompt) {
         return id;
     }
 }
-
-// ---------- Linked list operations ----------
 
 void insertAtBeginning(Node*& head, string id, string name, string prog, int year, double gpa, string contact = "") {
     Node* newNode = new Node(id, name, prog, year, gpa, contact);
@@ -140,7 +134,7 @@ void insertAtPosition(Node*& head, int index, string id, string name, string pro
     }
     newNode->next = temp->next;
     temp->next = newNode;
-    cout << "Successfully inserted at the " << index << endl;
+    cout << "Successfully inserted at position " << index << endl;
 }
 
 void traverse(Node* head) {
@@ -227,7 +221,6 @@ void searchById(Node* head, string id) {
     cout << "No student with ID '" << id << "' exists.\n";
 }
 
-
 void countRecords(Node*& head) {
     int count = 0;
     Node* temp = head;
@@ -263,12 +256,12 @@ Node* merge(Node* a, Node* b) {
         tail = tail->next;
     }
 
-    //if there is remaining nodes without comparing with b or a
     if (a != nullptr) tail->next = a;
     else tail->next = b;
 
     return dummy.next;
 }
+
 Node* mergeSort(Node* head) {
     if (head == NULL || head->next == NULL) {
         return head;
@@ -284,7 +277,6 @@ Node* mergeSort(Node* head) {
     return merge(a, b);
 }
 
-// ---------- CSV loading ----------
 void loadFromCSV(Node*& head, const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -336,7 +328,6 @@ void loadFromCSV(Node*& head, const string& filename) {
          << " (" << skipped << " skipped).\n";
 }
 
-// Frees every node in a list (used to clean up after a benchmark run)
 void freeList(Node*& head) {
     while (head != nullptr) {
         Node* temp = head;
@@ -355,40 +346,122 @@ int countNodes(Node* head) {
     return count;
 }
 
-// Loads ONE file into its own fresh list, times the load and the merge sort
-// separately, prints the results, then frees that list's memory.
 void benchmarkFile(const string& filename) {
     Node* head = nullptr;
 
     auto loadStart = chrono::high_resolution_clock::now();
     loadFromCSV(head, filename);
     auto loadEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> loadTime = loadEnd - loadStart;
 
-    int recordCount = countNodes(head);
+    if (head == nullptr) {
+        cout << "[Error] Failed to load records for file: " << filename << "\n";
+        return;
+    }
+
+    int structuralCount = countNodes(head);
+
+    Node* scanPtr = head;
+    while (scanPtr->next != nullptr) {
+        scanPtr = scanPtr->next;
+    }
+    string validTargetID = scanPtr->studentID;
+    string validTargetName = scanPtr->FullName;
+    string validTargetProg = scanPtr->programme;
+    int validTargetYear = scanPtr->yearOfStudy;
+    double validTargetCgpa = scanPtr->cgpa;
+    string validTargetContact = scanPtr->contactNumber;
+
+    streambuf* originalBuffer = cout.rdbuf();
+    stringstream dummyStream;
+    cout.rdbuf(dummyStream.rdbuf());
+
+    auto countStart = chrono::high_resolution_clock::now();
+    countRecords(head); 
+    auto countEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> countTime = countEnd - countStart;
+
+    auto searchIdStart = chrono::high_resolution_clock::now();
+    searchById(head, validTargetID);
+    auto searchIdEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> searchIdTime = searchIdEnd - searchIdStart;
+
+    auto searchNameStart = chrono::high_resolution_clock::now();
+    searchByName(head, validTargetName);
+    auto searchNameEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> searchNameTime = searchNameEnd - searchNameStart;
+
+    auto insBegStart = chrono::high_resolution_clock::now();
+    insertAtBeginning(head, "TP_BENCH_BEG", "Benchmark Beginning", "Data Structures", 1, 4.0);
+    auto insBegEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> insBegTime = insBegEnd - insBegStart;
+
+    auto insEndStart = chrono::high_resolution_clock::now();
+    insertAtEnd(head, "TP_BENCH_END", "Benchmark End", "Data Structures", 1, 4.0);
+    auto insEndEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> insEndTime = insEndEnd - insEndStart;
+
+    int targetedMidpoint = structuralCount / 2;
+    auto insPosStart = chrono::high_resolution_clock::now();
+    insertAtPosition(head, targetedMidpoint, "TP_BENCH_POS", "Benchmark Position", "Data Structures", 1, 4.0);
+    auto insPosEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> insPosTime = insPosEnd - insPosStart;
+
+    auto deleteStart = chrono::high_resolution_clock::now();
+    deleteById(head, validTargetID);
+    auto deleteEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> deleteTime = deleteEnd - deleteStart;
+
+    // Restore the record we just deleted (untimed) so the dataset is back to
+    // its original size before Display/Sort run below.
+    insertAtEnd(head, validTargetID, validTargetName, validTargetProg, validTargetYear, validTargetCgpa, validTargetContact);
+
+    deleteById(head, "TP_BENCH_BEG");
+    deleteById(head, "TP_BENCH_END");
+    deleteById(head, "TP_BENCH_POS");
+
+    auto displayStart = chrono::high_resolution_clock::now();
+    traverse(head);
+    auto displayEnd = chrono::high_resolution_clock::now();
+    chrono::duration<double, micro> displayTime = displayEnd - displayStart;
 
     auto sortStart = chrono::high_resolution_clock::now();
     head = mergeSort(head);
     auto sortEnd = chrono::high_resolution_clock::now();
-
-    chrono::duration<double, micro> loadTime = loadEnd - loadStart;
     chrono::duration<double, micro> sortTime = sortEnd - sortStart;
 
-    cout << "\n--- " << filename << " ---\n";
-    cout << "Records loaded : " << recordCount << "\n";
-    cout << "Load time      : " << loadTime.count() << " us\n";
-    cout << "Sort time      : " << sortTime.count() << " us\n";
-    cout << "Total time     : " << (loadTime.count() + sortTime.count()) << " us\n";
+    cout.rdbuf(originalBuffer);
+
+    cout << "\n=======================================================\n";
+    cout << "   COMPREHENSIVE BENCHMARK ANALYSIS FOR: " << filename << "\n";
+    cout << "=======================================================\n";
+    cout << "Total Records Processed  : " << structuralCount << " nodes\n";
+    cout << "Estimated Heap Footprint : " << (structuralCount * sizeof(Node)) << " Bytes (" 
+         << (double)(structuralCount * sizeof(Node)) / 1024.0 << " KB)\n";
+    cout << "-------------------------------------------------------\n";
+    cout << "Operation Measured            | Execution Speed Time\n";
+    cout << "-------------------------------------------------------\n";
+    cout << "1. Load Dataset File          | " << loadTime.count() << " us\n";
+    cout << "2. Add / Insert (Head)        | " << insBegTime.count() << " us\n";
+    cout << "3. Add / Insert (End)         | " << insEndTime.count() << " us\n";
+    cout << "4. Add / Insert (Position)    | " << insPosTime.count() << " us\n";
+    cout << "5. Delete by Student ID       | " << deleteTime.count() << " us\n";
+    cout << "6. Search - Linear (by ID)    | " << searchIdTime.count() << " us\n";
+    cout << "7. Search - Linear (by Name)  | " << searchNameTime.count() << " us\n";
+    cout << "8. Display All                | " << displayTime.count() << " us\n";
+    cout << "9. Count Records              | " << countTime.count() << " us\n";
+    cout << "10. Sort by CGPA              | " << sortTime.count() << " us\n";
+    cout << "=======================================================\n";
 
     freeList(head);
 }
 
-// Runs benchmarkFile() on every file in the list, one at a time.
 void benchmarkAllFiles(const string filenames[], int size) {
-    cout << "\n===== Running Load & Sort Benchmark =====\n";
+    cout << "\n===== Running Comprehensive Load & Operations Benchmark =====\n";
     for (int i = 0; i < size; ++i) {
         benchmarkFile(filenames[i]);
     }
-    cout << "\n===== Benchmark Complete =====\n";
+    cout << "\n===== Benchmark Metrics Compilation Complete =====\n";
 }
 
 void printMenu() {
@@ -409,7 +482,6 @@ void printMenu() {
 int main() {
     Node* head = nullptr;
 
- 
     string csvFiles[4] = {
         "./datasets/students_500.csv",
         "./datasets/students_2000.csv",
@@ -417,7 +489,6 @@ int main() {
         "./datasets/students_30000.csv"
     };
 
-    // Clean single-file initial selector to keep datasets isolated
     cout << "===== Initial Data Setup =====\n";
     cout << "Select which dataset file to load into active system memory:\n";
     cout << "1. students_500.csv\n2. students_2000.csv\n3. students_8000.csv\n4. students_30000.csv\n";
