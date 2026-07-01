@@ -3,3 +3,6 @@
 
 # Ignore local VS Code configurations (since your tasks.json has your specific C:\msys64 path)
 .vscode/
+
+TP073614_PerfRecord.txt
+
