@@ -3,19 +3,18 @@
 #include <sstream>
 #include <string>
 #include <limits>
-#include <vector>
 #include <chrono>
 using namespace std;
 
 class Node {
 public:
     Node* next;
-    string studentID;      // changed from int -> string (real IDs are like "TP180623")
+    string studentID;      
     string FullName;
     string programme;
     int yearOfStudy;
     double cgpa;
-    string contactNumber;  // new field, present in the CSV
+    string contactNumber; 
 
     Node(string id, string name, string prog, int year, double gpa, string contact = "") {
         studentID = id;
@@ -28,7 +27,7 @@ public:
     }
 };
 
-// ---------- Input validation helpers ----------
+
 
 int getValidInt(const string& prompt) {
     int value;
@@ -208,6 +207,27 @@ void searchByName(Node*& head, string name) {
     }
 }
 
+void searchById(Node* head, string id) {
+    Node* temp = head;
+    if (head == nullptr) {
+        cout << "\nThe list is empty. Cannot search.\n";
+        return;
+    }
+    while (temp != nullptr) {
+        if (temp->studentID == id) {
+            cout << "ID: " << temp->studentID
+                 << " | Name: " << temp->FullName
+                 << " | Programme: " << temp->programme
+                 << " | Year: " << temp->yearOfStudy
+                 << " | CGPA: " << temp->cgpa << endl;
+            return; 
+        }
+        temp = temp->next;
+    }
+    cout << "No student with ID '" << id << "' exists.\n";
+}
+
+
 void countRecords(Node*& head) {
     int count = 0;
     Node* temp = head;
@@ -259,19 +279,6 @@ Node* mergeSort(Node* head) {
 }
 
 // ---------- CSV loading ----------
-
-
-vector<string> splitCSVLine(const string& line) {
-    vector<string> fields;
-    stringstream ss(line);
-    string field;
-    while (getline(ss, field, ',')) {
-        fields.push_back(field);
-    }
-    return fields;
-}
-
-
 void loadFromCSV(Node*& head, const string& filename) {
     ifstream file(filename);
     if (!file.is_open()) {
@@ -284,42 +291,40 @@ void loadFromCSV(Node*& head, const string& filename) {
 
     while (getline(file, line)) {
         if (line.empty()) continue;
-
         if (isHeader) {
             isHeader = false;
-            continue; // skip the header row
+            continue; 
         }
 
-        vector<string> fields = splitCSVLine(line);
-        if (fields.size() < 5) {
+        stringstream ss(line);
+        string id, name, prog, yearStr, gpaStr, contact;
+
+        if (!getline(ss, id, ',') || !getline(ss, name, ',') ||
+            !getline(ss, prog, ',') || !getline(ss, yearStr, ',') ||
+            !getline(ss, gpaStr, ',')) {
             skipped++;
             continue;
         }
-
-        string id = fields[0];
-        string name = fields[1];
-        string prog = fields[2];
-        string contact = (fields.size() >= 6) ? fields[5] : "";
+        getline(ss, contact, ',');
 
         int year;
         double gpa;
         try {
-            year = stoi(fields[3]);
-            gpa = stod(fields[4]);
+            year = stoi(yearStr);
+            gpa = stod(gpaStr);
         } catch (...) {
-            skipped++; // non-numeric Year/CGPA in this row
+            skipped++; 
             continue;
         }
 
         if (id.empty() || isIdTaken(head, id)) {
-            skipped++; // missing or duplicate ID across files
+            skipped++; 
             continue;
         }
 
         insertAtEnd(head, id, name, prog, year, gpa, contact);
         loaded++;
     }
-
     file.close();
     cout << "Loaded " << loaded << " record(s) from " << filename
          << " (" << skipped << " skipped).\n";
@@ -368,14 +373,14 @@ void benchmarkFile(const string& filename) {
     cout << "Sort time      : " << sortTime.count() << " us\n";
     cout << "Total time     : " << (loadTime.count() + sortTime.count()) << " us\n";
 
-    freeList(head); // this list is separate from main's list, so clean it up here
+    freeList(head);
 }
 
 // Runs benchmarkFile() on every file in the list, one at a time.
-void benchmarkAllFiles(const vector<string>& filenames) {
+void benchmarkAllFiles(const string filenames[], int size) {
     cout << "\n===== Running Load & Sort Benchmark =====\n";
-    for (const string& filename : filenames) {
-        benchmarkFile(filename);
+    for (int i = 0; i < size; ++i) {
+        benchmarkFile(filenames[i]);
     }
     cout << "\n===== Benchmark Complete =====\n";
 }
@@ -399,19 +404,25 @@ int main() {
     Node* head = nullptr;
 
  
-    vector<string> csvFiles = {
+    string csvFiles[4] = {
         "./datasets/students_500.csv",
         "./datasets/students_2000.csv",
         "./datasets/students_8000.csv",
         "./datasets/students_30000.csv"
     };
 
-    for (const string& filename : csvFiles) {
-        loadFromCSV(head, filename);
+    // Clean single-file initial selector to keep datasets isolated
+    cout << "===== Initial Data Setup =====\n";
+    cout << "Select which dataset file to load into active system memory:\n";
+    cout << "1. students_500.csv\n2. students_2000.csv\n3. students_8000.csv\n4. students_30000.csv\n";
+    int fileChoice = getValidInt("Enter choice (1-4): ");
+    if (fileChoice >= 1 && fileChoice <= 4) {
+        loadFromCSV(head, csvFiles[fileChoice - 1]);
+    } else {
+        cout << "Invalid selection. Initializing with empty system list.\n";
     }
 
     int choice;
-
     do {
         printMenu();
         cin >> choice;
@@ -464,8 +475,17 @@ int main() {
                 break;
             }
             case 6: {
-                string name = getValidLine("Enter Full Name to search: ");
-                searchByName(head, name);
+                cout << "Search Options:\n1. Search by Full Name\n2. Search by Student ID\nEnter selection: ";
+                int sType = getValidInt("");
+                if (sType == 1) {
+                    string name = getValidLine("Enter Full Name to search: ");
+                    searchByName(head, name);
+                } else if (sType == 2) {
+                    string id = getValidLine("Enter Student ID to search: ");
+                    searchById(head, id);
+                } else {
+                    cout << "Invalid option chosen.\n";
+                }
                 break;
             }
             case 7:
@@ -473,6 +493,7 @@ int main() {
                 break;
             case 8: {
                 head = mergeSort(head);   
+                cout << "\n--- Sorted Records (by CGPA Descending) ---\n";
                 traverse(head);
                 break;
             }
@@ -480,17 +501,13 @@ int main() {
                 cout << "Exiting program. Goodbye!\n";
                 break;
             case 10:
-                benchmarkAllFiles(csvFiles);
+                benchmarkAllFiles(csvFiles, 4);
                 break;
             default:
                 cout << "Invalid choice. Please select a number between 1 and 10.\n";
         }
     } while (choice != 9);
 
-    while (head != nullptr) {
-        Node* temp = head;
-        head = head->next;
-        delete temp;
-    }
+    freeList(head);
     return 0;
 }
