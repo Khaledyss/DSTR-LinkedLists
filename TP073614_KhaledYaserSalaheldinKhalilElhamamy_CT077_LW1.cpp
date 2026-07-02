@@ -27,6 +27,25 @@ public:
     }
 };
 
+
+class ProgrammeNode {
+public:
+    ProgrammeNode* next;
+    string code;
+    string name;
+    string faculty;
+    int durationYears;
+ 
+    ProgrammeNode(string c, string n, string f, int d) {
+        code = c;
+        name = n;
+        faculty = f;
+        durationYears = d;
+        next = nullptr;
+    }
+};
+
+
 int getValidInt(const string& prompt) {
     int value;
     while (true) {
@@ -97,6 +116,119 @@ string getValidUniqueId(Node* head, const string& prompt) {
             continue;
         }
         return id;
+    }
+}
+ 
+
+void loadProgrammes(ProgrammeNode*& programmeHead, const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cout << "[Warning] Could not open programme file: " << filename << ". "
+             << "Programme validation will be skipped.\n";
+        return;
+    }
+ 
+    string line;
+    bool isHeader = true;
+    int loaded = 0, skipped = 0;
+    ProgrammeNode* tail = nullptr;
+ 
+    while (getline(file, line)) {
+        if (line.empty()) continue;
+        if (isHeader) {
+            isHeader = false;
+            continue;
+        }
+ 
+        stringstream ss(line);
+        string code, name, faculty, durationStr;
+ 
+        if (!getline(ss, code, ',') || !getline(ss, name, ',') ||
+            !getline(ss, faculty, ',') || !getline(ss, durationStr, ',')) {
+            skipped++;
+            continue;
+        }
+ 
+        int duration;
+        try {
+            duration = stoi(durationStr);
+        } catch (...) {
+            skipped++;
+            continue;
+        }
+ 
+        if (code.empty()) {
+            skipped++;
+            continue;
+        }
+ 
+        ProgrammeNode* newNode = new ProgrammeNode(code, name, faculty, duration);
+        if (programmeHead == nullptr) {
+            programmeHead = newNode;
+        } else {
+            tail->next = newNode;
+        }
+        tail = newNode;
+        loaded++;
+    }
+    file.close();
+    cout << "Loaded " << loaded << " programme(s) from " << filename
+         << " (" << skipped << " skipped).\n";
+}
+ 
+
+void displayProgrammes(ProgrammeNode* programmeHead) {
+    if (programmeHead == nullptr) {
+        cout << "No programme data is currently loaded.\n";
+        return;
+    }
+    cout << "\n----------------------------------------------------------------------\n";
+    cout << "Code    | Programme Name                                        | Years\n";
+    cout << "----------------------------------------------------------------------\n";
+    ProgrammeNode* temp = programmeHead;
+    while (temp != nullptr) {
+        cout << temp->code << "\t| " << temp->name << " | " << temp->durationYears << "\n";
+        temp = temp->next;
+    }
+    cout << "----------------------------------------------------------------------\n";
+}
+ 
+
+ProgrammeNode* findProgrammeByCode(ProgrammeNode* programmeHead, const string& code) {
+    ProgrammeNode* temp = programmeHead;
+    while (temp != nullptr) {
+        if (temp->code == code) {
+            return temp;
+        }
+        temp = temp->next;
+    }
+    return nullptr;
+}
+ 
+
+string getValidProgramme(ProgrammeNode* programmeHead, const string& prompt) {
+    if (programmeHead == nullptr) {
+        cout << "[Notice] No programme list loaded -- falling back to free-text entry.\n";
+        return getValidLine(prompt);
+    }
+ 
+    displayProgrammes(programmeHead);
+ 
+    while (true) {
+        string code = getValidLine("Enter Programme Code from the list above: ");
+        ProgrammeNode* match = findProgrammeByCode(programmeHead, code);
+        if (match != nullptr) {
+            return match->name;
+        }
+        cout << "Programme code '" << code << "' was not found. Please choose a code from the list above.\n";
+    }
+}
+ 
+void freeProgrammeList(ProgrammeNode*& programmeHead) {
+    while (programmeHead != nullptr) {
+        ProgrammeNode* temp = programmeHead;
+        programmeHead = programmeHead->next;
+        delete temp;
     }
 }
 
@@ -476,19 +608,26 @@ void printMenu() {
     cout << "8. Merge Sort\n";
     cout << "9. Exit\n";
     cout << "10. Benchmark load & sort time for each CSV file\n";
+    cout << "11. View available programmes\n";
     cout << "Enter your choice: ";
 }
-
+ 
 int main() {
     Node* head = nullptr;
-
+    ProgrammeNode* programmeHead = nullptr;
+ 
     string csvFiles[4] = {
         "./datasets/students_500.csv",
         "./datasets/students_2000.csv",
         "./datasets/students_8000.csv",
         "./datasets/students_30000.csv"
     };
-
+    const string programmeFile = "./datasets/programmes.csv";
+ 
+    // Load the master programme list once at startup so every insertion
+    // path (beginning/end/position) can validate against it.
+    loadProgrammes(programmeHead, programmeFile);
+ 
     cout << "===== Initial Data Setup =====\n";
     cout << "Select which dataset file to load into active system memory:\n";
     cout << "1. students_500.csv\n2. students_2000.csv\n3. students_8000.csv\n4. students_30000.csv\n";
@@ -498,25 +637,25 @@ int main() {
     } else {
         cout << "Invalid selection. Initializing with empty system list.\n";
     }
-
+ 
     int choice;
     do {
         printMenu();
         cin >> choice;
-
+ 
         if (cin.fail()) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "Invalid input. Please enter a number from 1-10.\n";
+            cout << "Invalid input. Please enter a number from 1-11.\n";
             continue;
         }
         cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
+ 
         switch (choice) {
             case 1: {
                 string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
-                string prog = getValidLine("Enter Programme: ");
+                string prog = getValidProgramme(programmeHead, "Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
                 double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtBeginning(head, id, name, prog, year, gpa);
@@ -525,7 +664,7 @@ int main() {
             case 2: {
                 string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
-                string prog = getValidLine("Enter Programme: ");
+                string prog = getValidProgramme(programmeHead, "Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
                 double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtEnd(head, id, name, prog, year, gpa);
@@ -536,7 +675,7 @@ int main() {
                 int pos = getValidInt("Enter position to insert at: ");
                 string id = getValidUniqueId(head, "Enter Student ID: ");
                 string name = getValidLine("Enter Full Name: ");
-                string prog = getValidLine("Enter Programme: ");
+                string prog = getValidProgramme(programmeHead, "Enter Programme: ");
                 int year = getValidInt("Enter Year of Study: ");
                 double gpa = getValidCGPA("Enter CGPA: ");
                 insertAtPosition(head, pos, id, name, prog, year, gpa);
@@ -580,11 +719,16 @@ int main() {
             case 10:
                 benchmarkAllFiles(csvFiles, 4);
                 break;
+            case 11:
+                cout << "\n--- Available Programmes (from " << programmeFile << ") ---\n";
+                displayProgrammes(programmeHead);
+                break;
             default:
-                cout << "Invalid choice. Please select a number between 1 and 10.\n";
+                cout << "Invalid choice. Please select a number between 1 and 11.\n";
         }
     } while (choice != 9);
-
+ 
     freeList(head);
+    freeProgrammeList(programmeHead);
     return 0;
 }
