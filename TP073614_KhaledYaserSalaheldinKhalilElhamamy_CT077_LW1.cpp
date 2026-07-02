@@ -109,12 +109,48 @@ bool isIdTaken(Node* head, const string& id) {
 
 string getValidUniqueId(Node* head, const string& prompt) {
     string id;
+
     while (true) {
         id = getValidLine(prompt);
-        if (isIdTaken(head, id)) {
-            cout << "Student ID " << id << " already exists! Please enter a different ID.\n";
+
+        // Remove TP if the user typed it
+        if (id.substr(0, 2) == "TP") {
+            id = id.substr(2);
+        }
+
+        // Check if all characters are digits
+        bool valid = true;
+        for (char c : id) {
+            if (!isdigit(c)) {
+                valid = false;
+                break;
+            }
+        }
+
+        if (!valid) {
+            cout << "Student ID must contain only numbers.\n";
             continue;
         }
+
+        // Reject if more than 6 digits
+        if (id.length() > 6) {
+            cout << "Student ID cannot be more than 6 digits.\n";
+            continue;
+        }
+
+        // Pad with leading zeros until it is 6 digits
+        while (id.length() < 6) {
+            id = "0" + id;
+        }
+
+        // Add TP prefix
+        id = "TP" + id;
+
+        if (isIdTaken(head, id)) {
+            cout << "Student ID " << id << " already exists!\n";
+            continue;
+        }
+
         return id;
     }
 }
